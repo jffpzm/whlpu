@@ -250,9 +250,9 @@ debug_site_info=$(cat <<	EOF
 	unzipped_log = $unzipped_log 
 EOF
 )
-	echo "	${hashed_site}"
+	#echo "	${hashed_site}"
 	#echo "[INFO] ${debug_site_info}"
-	#await "$debug_site_info"
+	await "$debug_site_info"
 	
 	# Append site and hostname to the end of each line in the logfile 
 	sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"
