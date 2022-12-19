@@ -201,9 +201,12 @@ site_names=()
 ## Pull access logs from each site's home directory into $base_directory
 # Which/how many logs get pulled depend on the supplied $term_period parameter
 case "$term_period" in 
-	d|day|Day) cp /home/*/logs/*.com-${month}-${year}.gz ./ ;;
-	m|month|Month) cp /home/*/logs/*.com-${month}-${year}.gz ./ ;;
-	y|year|Year) cp /home/*/logs/*.com-*-${year}.gz ./ ;;
+	#d|day|Day) cp /home/*/logs/*.com-${month}-${year}.gz ./ ;;
+	d|day|Day) cp /home/*/logs/*-${month}-${year}.gz ./ ;;
+	#m|month|Month) cp /home/*/logs/*.com-${month}-${year}.gz ./ ;;
+	m|month|Month) cp /home/*/logs/*-${month}-${year}.gz ./ ;;
+	#y|year|Year) cp /home/*/logs/*.com-*-${year}.gz ./ ;;
+	y|year|Year) cp /home/*/logs/*-${year}.gz ./ ;;
 	*) ;;
 esac
 #ls *.gz
@@ -226,9 +229,9 @@ for zipped_log in *.gz; do
 
     # Extract logs from the previous day into a separate file in $temp_directory
 	case "$term_period" in 
-		d|day|Day) grep "${dom}/${month}/${year}" $unzipped_log > "${temp_directory}/sites/${unzipped_log}" ;;
-		m|month|Month) grep ".*/${month}/${year}" $unzipped_log > "${temp_directory}/sites/${unzipped_log}" ;;
-		y|year|Year) grep ".*/.*/${year}" $unzipped_log > "${temp_directory}/sites/${unzipped_log}" ;;
+		d|day|Day) grep "${dom}/${month}/${year}" $unzipped_log >> "${temp_directory}/sites/${unzipped_log}" ;;
+		m|month|Month) grep ".*/${month}/${year}" $unzipped_log >> "${temp_directory}/sites/${unzipped_log}" ;;
+		y|year|Year) grep ".*/.*/${year}" $unzipped_log >> "${temp_directory}/sites/${unzipped_log}" ;;
 		*) ;;
 	esac
 	#[ $term_period == "day" ] && grep "${dom}/${month}/${year}" $unzipped_log > "${temp_directory}/sites/${unzipped_log}" 
@@ -360,6 +363,7 @@ done
 #echo "[INFO] Masking unhashed host name within files under the temp directory"
 #find $temp_directory -type f | xargs sed -i "s/${plain_host}/${hashed_host}/gi"  #"${temp_directory}/*" # <- Handles the possibility of this hostname being logged by other sites
 
+#find ./ -type f -exec sed -i -e 's/orange/apple/g' {} \;
 
 # Append hashed host to the end of each log entry in the tmp/host subdirectory
 #find $temp_directory/host -type f | xargs sed -i "s/$/ ${hashed_host}/"
