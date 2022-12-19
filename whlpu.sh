@@ -258,7 +258,8 @@ EOF
 	#await "$debug_site_info"
 	
 	# Append site and hostname to the end of each line in the logfile 
-	sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"
+	#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"
+	sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
 	
 	# Mask instances of the hostname occurring in the logs <-- Handling this later on after the for-loop completes
 	sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
