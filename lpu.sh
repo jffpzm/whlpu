@@ -114,7 +114,6 @@ plain_host=$(hostname | xargs)
 hashed_host=$(host_hash_function "$plain_host")
 debug_host_hash=$(cat <<EOF
 Host Information: 
-	plain_host = $plain_host
 	hashed_host = $hashed_host
 EOF
 )
