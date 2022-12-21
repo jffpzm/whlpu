@@ -17,7 +17,7 @@ script_name="${absolute_script_path##*/}"
 echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
 
 ### Configuration Information ###
-base_directory="$(basedir "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
+base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
 config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
