@@ -1,11 +1,11 @@
 #!/bin/bash
 # Web Host Log Parsing Utility
-# @filename whlpu_min.sh
+# @filename lpu.sh
 # @created 2022.08.23
 # @version 2022.12.21+15:15
 
 # Configure global logging
-log_file="/var/log/whlpu.log" # Path to log file
+log_file="/var/log/lpu.log" # Path to log file
 exec 3>&1 4>&2
 trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$log_file 2>&1
@@ -17,8 +17,8 @@ script_name="${absolute_script_path##*/}"
 echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
 
 ### Configuration Information ###
-config_file="/etc/whlpu.conf" # Path to config file 
-base_directory="/opt/whlpu" # Base working directory 
+base_directory="$(basedir "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
+config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
 # Default selections for parse term parameters
