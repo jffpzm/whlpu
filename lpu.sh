@@ -166,7 +166,7 @@ debug_site_info=$(cat <<	EOF
 EOF
 )
 	#echo "[INFO] ${debug_site_info}"
-	echo "[INFO] ${hashed_site} $(echo ${unzipped_log} | sed "s/${current_site}/${hashed_site}/gi")"
+	echo "[INFO] Processing ${hashed_site} : $(echo ${unzipped_log} | sed "s/${current_site}/${hashed_site}/gi")"
 ###############################
 	
 	# Append site and hostname to the end of each line in the logfile 
