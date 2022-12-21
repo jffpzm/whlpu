@@ -4,10 +4,16 @@
 # @created 2022.08.23
 # @version 2022.12.21+15:15
 
+# Configure global logging
+log_file="/var/log/whlpu.log" # Path to log file
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>$log_file 2>&1
+# Everything below will be logged to "$log_file":
+
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
 script_name="${absolute_script_path##*/}"
-
 echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
 
 ### Configuration Information ###
@@ -15,18 +21,9 @@ config_file="/etc/whlpu.conf" # Path to config file
 base_directory="/opt/whlpu" # Base working directory 
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
-log_file="/var/log/whlpu.log" # Path to log file
-
-# Configure global logging
-exec 3>&1 4>&2
-trap 'exec 2>&4 1>&3' 0 1 2 3
-exec 1>$log_file 2>&1
-# Everything below will be logged to "$log_file":
-
 # Default selections for parse term parameters
 term_period="month" # Length of term to parse, e.g. hour, day, month, year, or all 
 term_target="last month" # String datetime describing a point within the desired term_period
-
 # Hashing preferences
 # Must be set before any hashing is done, clearly
 host_hash_start=1
@@ -169,7 +166,7 @@ debug_site_info=$(cat <<	EOF
 EOF
 )
 	#echo "[INFO] ${debug_site_info}"
-	echo "[INFO] ${hashed_site}"
+	echo "[INFO] ${hashed_site} $(echo unzipped_log | sed "s/${current_site}/${hashed_site}/gi")"
 ###############################
 	
 	# Append site and hostname to the end of each line in the logfile 
