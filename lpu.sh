@@ -198,6 +198,7 @@ rm -rf "${temp_directory}/trash"
 
 ### Create deliverable archive 
 echo "[INFO] Creating archive and compressing"
+cp $log_file $temp_directory 
 ( cd $temp_directory && tar -czf "${package_directory}/${hashed_host}_${timestamp}_${term_period}_of_${short_date}.tar.gz" * )
 
 # Clean up working directory before we finish up
