@@ -175,11 +175,11 @@ case "$term_period" in
 esac
 site_names=()
 # Iterate through the gzipped log files in $base_directory
-echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
+echo "[INFO] Entering for-loop at $(get_timestamp)"
 for zipped_log in *.gz; do
 
     # Unzip the current file
-    gunzip "$zipped_log"
+    gunzip $zipped_log
 	echo "zipped_log = ${zipped_log}"
     # Strip the '.gz' extension from zipped_log and save it for reference
     unzipped_log=$(strip_gz_extension "$zipped_log") #$(echo $zipped_log | sed -e s/\.gz$//) 
@@ -193,7 +193,7 @@ for zipped_log in *.gz; do
 	esac
 
 	# Strip the TLD from the FQDN to get a bare domain name 
-	current_site=$(strip_all_extensions "$unzipped_log") #$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
+	current_site=$(strip_all_extensions $unzipped_log) #$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
 	echo "current_site = ${current_site}"
 	# Append $current_site to the $site_names array
 	site_names+=($current_site)
