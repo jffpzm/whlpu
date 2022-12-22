@@ -97,7 +97,7 @@ append_all_lines() {
 	[ -f $file_to_append ] && sed -i "s/$/ ${suffix_string}/" "$file_to_append"
 }
 strip_all_extensions () { echo $1 | sed -e 's/\.[^.][^.]*$//'; }
-strip_gz_extension () { echo $zipped_log | sed -e 's/\.gz$//'; }
+strip_gz_extension () { echo $1 | sed -e 's/\.gz$//'; }
 ##
 
 ### Initialization ###
@@ -209,7 +209,7 @@ debug_site_info=$(cat <<EOF
 	unzipped_log = $unzipped_log 
 EOF
 )
-	#echo "[INFO] ${debug_site_info}"
+	echo "[INFO] ${debug_site_info}"
 	echo "[INFO] Processing ${hashed_site} : $(echo ${unzipped_log} | sed "s/${current_site}/${hashed_site}/gi")"
 ###############################
 	
