@@ -175,8 +175,8 @@ for zipped_log in *.gz; do
     gunzip $zipped_log
 
     # Strip the '.gz' extension from zipped_log and save it for reference
-    #unzipped_log=$(echo $zipped_log | sed -e s/\.gz$//) 
-	unzipped_log=$(strip_gz_extension $zipped_log)
+    unzipped_log=$(echo $zipped_log | sed -e s/\.gz$//) 
+	#unzipped_log=$(strip_gz_extension $zipped_log)
     
 	# Extract logs from the previous day into a separate file in $temp_directory
 	case "$term_period" in 
