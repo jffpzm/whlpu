@@ -37,11 +37,8 @@ host_hash_stop=12
 site_hash_start=1
 site_hash_stop=24
 
-# Source config if it exists
-[ -f $config_file ] && source $config_file
-
-debug_configuration=$(cat <<EOF
-Debug Configuration Information:
+debug_initial_configuration=$(cat <<EOF
+Default Configuration:
 	relative_script_path = $relative_script_path
 	absolute_script_path = $absolute_script_path
 	base_directory = $base_directory
@@ -57,7 +54,17 @@ Debug Configuration Information:
 	site_hash_stop = $site_hash_stop
 EOF
 )
-echo "[INFO] ${debug_configuration}" 
+echo "[INFO] ${debug_initial_configuration}" 
+
+# Source config if it exists
+[ -f $config_file ] && source $config_file
+: '
+### Function definitions ###
+await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
+site_hash_function() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
+host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
+##
+'
 ### Function Definitions Part 2 ###
 hash_site() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
 host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
@@ -208,14 +215,11 @@ EOF
 ###############################
 	
 	# Append site and hostname to the end of each line in the logfile 
-	append_all_lines --suffix-string="$hashed_site" --file-to-append="${temp_directory/sites/${unzipped_log}"
-	#sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
+	sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
 	#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"  # <-- Maybe used later
 	
 	# Mask instances of the hostname occurring in the logs <-- Does not mask any instances outside of own logs
-	mask_all_matches --unmasked-string="$current_site" --masked-string="$hashed_site" --file-to-mask="${temp_directory}/sites/${unzipped_log}"
-	mask_all_matches --unmasked-string="$current_site" --masked-string="$hashed_site" --file-to-mask="${temp_directory}/host/apache2_access_log"
-	#sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
+	sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
 	
 	# Rename logfile with hashed domain name
 	mv $temp_directory/sites/$unzipped_log $temp_directory/sites/$hashed_site
@@ -223,7 +227,7 @@ EOF
     # Re-zip the current file (so it can be identified for deletion), then on to the next
 	gzip $unzipped_log 
 done
-echo "[INFO] Exiting for-loop at $(get_timestamp)"
+echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 
 # Mask host name
 #echo "[INFO] Masking unhashed host name within files under the temp directory"
