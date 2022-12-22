@@ -202,7 +202,7 @@ for zipped_log in *.gz; do
 	hashed_site=$(hash_site "$current_site")
 	
 ### Only used for debugging ###
-debug_site_info=$(cat <<	EOF
+debug_site_info=$(cat <<EOF
 	current_site = $current_site 
 	hashed_site = $hashed_site
 	zipped_log = $zipped_log 
