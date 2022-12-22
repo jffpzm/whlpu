@@ -58,13 +58,6 @@ Debug Configuration Information:
 EOF
 )
 echo "[INFO] ${debug_configuration}" 
-: '
-### Function definitions ###
-await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
-site_hash_function() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
-host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
-##
-'
 ### Function Definitions Part 2 ###
 hash_site() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
 host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
