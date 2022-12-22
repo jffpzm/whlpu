@@ -17,11 +17,11 @@ get_timestamp() { date +"%Y-%m-%d_%H:%M:%S"; }
 ###
 
 ### Configuration Information ###
-start_timestamp="$(get_timestamp)" #$(date +"%Y%m%d_%H%M%S") # Timestamp
+start_timestamp=get_timestamp #$(date +"%Y%m%d_%H%M%S") # Timestamp
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
 script_name="${absolute_script_path##*/}"
-echo -e "\n[INFO] Execution of ${script_name} started at ${start_timestamp}"
+echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
 base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
 config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
 # Source config if it exists
@@ -169,7 +169,7 @@ case "$term_period" in
 esac
 site_names=()
 # Iterate through the gzipped log files in $base_directory
-echo "[INFO] Entering for-loop at $(get_timestamp)"
+echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 for zipped_log in *.gz; do
 
     # Unzip the current file
@@ -220,7 +220,7 @@ EOF
     # Re-zip the current file (so it can be identified for deletion), then on to the next
 	gzip $unzipped_log 
 done
-echo "[INFO] Exiting for-loop at $(get_timestamp)"
+echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 
 # Mask host name
 #echo "[INFO] Masking unhashed host name within files under the temp directory"
