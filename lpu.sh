@@ -11,20 +11,21 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$log_file 2>&1
 # Everything below will be logged to "$log_file":
 
-
 ### Function Definitions Part 1 ###
 await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
-get_timestamp() { date +"%Y-%m-%d+%H:%M:%S"; }
+get_timestamp() { date +"%Y-%m-%d_%H:%M:%S"; }
 ###
 
+### Configuration Information ###
+start_timestamp=get_timestamp #$(date +"%Y%m%d_%H%M%S") # Timestamp
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
 script_name="${absolute_script_path##*/}"
-echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
-
-### Configuration Information ###
+echo -e "\n[INFO] Execution of ${script_name} started at ${start_timestamp}"
 base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
 config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
+# Source config if it exists
+[ -f $config_file ] && source $config_file
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
 # Default selections for parse term parameters
@@ -37,8 +38,8 @@ host_hash_stop=12
 site_hash_start=1
 site_hash_stop=24
 
-debug_initial_configuration=$(cat <<EOF
-Default Configuration:
+debug_configuration=$(cat <<EOF
+Configuration Information:
 	relative_script_path = $relative_script_path
 	absolute_script_path = $absolute_script_path
 	base_directory = $base_directory
@@ -54,19 +55,11 @@ Default Configuration:
 	site_hash_stop = $site_hash_stop
 EOF
 )
-echo "[INFO] ${debug_initial_configuration}" 
+echo "[INFO] ${debug_configuration}" 
 
-# Source config if it exists
-[ -f $config_file ] && source $config_file
-: '
-### Function definitions ###
-await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
-site_hash_function() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
-host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
-##
-'
+
 ### Function Definitions Part 2 ###
-hash_site() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
+site_hash_function() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
 host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
 mask_all_matches() { 
 	local unmasked_string
@@ -139,7 +132,6 @@ iso_date=$(date -d "$term_target" +%F) # term_target's full date; like %+4Y-%m-%
 short_date="${iso_date//-/}"
 timezone=$(date -d "$term_target" +%Z) # Alphabetic time zone abbreviation, e.g. EST
 # Generate a runtime timestamp
-timestamp=$(date +"%Y%m%d_%H%M%S") # Timestamp
 
 debug_time_info=$(cat <<EOF
 Datetime Information:
@@ -148,7 +140,7 @@ Datetime Information:
 	dom = $dom 
 	iso_date = $iso_date 
 	timezone = $timezone 
-	timestamp = $timestamp
+	timestamp = $start_timestamp
 EOF
 )
 echo "[INFO] ${debug_time_info}"
@@ -179,12 +171,13 @@ site_names=()
 # Iterate through the gzipped log files in $base_directory
 echo "[INFO] Entering for-loop at $(get_timestamp)"
 for zipped_log in *.gz; do
+
     # Unzip the current file
-    gunzip $zipped_log
-	echo "zipped_log = ${zipped_log}"
+    gunzip "$zipped_log"
+
     # Strip the '.gz' extension from zipped_log and save it for reference
-    unzipped_log=$(strip_gz_extension "$zipped_log") #$(echo $zipped_log | sed -e s/\.gz$//) 
-	echo "unzipped_log = ${unzipped_log}"
+    unzipped_log=$(echo $zipped_log | sed -e s/\.gz$//) 
+
     # Extract logs from the previous day into a separate file in $temp_directory
 	case "$term_period" in 
 		d|day|Day) grep "${dom}/${month}/${year}" $unzipped_log >> "${temp_directory}/sites/${unzipped_log}" ;;
@@ -194,14 +187,14 @@ for zipped_log in *.gz; do
 	esac
 
 	# Strip the TLD from the FQDN to get a bare domain name 
-	current_site=$(strip_all_extensions $unzipped_log) #$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
-	echo "current_site = ${current_site}"
+	current_site=$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
+	
 	# Append $current_site to the $site_names array
 	site_names+=($current_site)
 	
 	# Hash the current sitename
-	hashed_site=$(hash_site "$current_site")
-	echo "hashed_site = ${hashed_site}"
+	hashed_site=$(site_hash_function "$current_site")
+	
 ### Only used for debugging ###
 debug_site_info=$(cat <<	EOF
 	current_site = $current_site 
@@ -254,4 +247,3 @@ rm *.gz
 # Exit gracefully
 echo "[INFO] Execution of ${script_name} complete at $(date +"%Y-%m-%d_%H:%M:%S")"
 echo -e "\n"
-
