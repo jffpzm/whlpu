@@ -139,6 +139,7 @@ Datetime Information:
 	month = $month 
 	dom = $dom 
 	iso_date = $iso_date 
+	timezone = $timezone 
 	timestamp = $start_timestamp
 EOF
 )
@@ -172,13 +173,12 @@ echo "[INFO] Entering for-loop at $(get_timestamp)"
 for zipped_log in *.gz; do
 
     # Unzip the current file
-    gunzip $zipped_log
+    gunzip "$zipped_log"
 
     # Strip the '.gz' extension from zipped_log and save it for reference
     unzipped_log=$(echo $zipped_log | sed -e s/\.gz$//) 
-	#unzipped_log=$(strip_gz_extension $zipped_log)
-    
-	# Extract logs from the previous day into a separate file in $temp_directory
+
+    # Extract logs from the previous day into a separate file in $temp_directory
 	case "$term_period" in 
 		d|day|Day) grep "${dom}/${month}/${year}" $unzipped_log >> "${temp_directory}/sites/${unzipped_log}" ;;
 		m|month|Month) grep ".*/${month}/${year}" $unzipped_log >> "${temp_directory}/sites/${unzipped_log}" ;;
@@ -188,7 +188,6 @@ for zipped_log in *.gz; do
 
 	# Strip the TLD from the FQDN to get a bare domain name 
 	current_site=$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
-	#current_site=$(strip_all_extensions $unzipped_log)
 	
 	# Append $current_site to the $site_names array
 	site_names+=($current_site)
@@ -210,12 +209,10 @@ EOF
 	
 	# Append site and hostname to the end of each line in the logfile 
 	sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
-	#append_all_lines --suffix-string="$hashed_site" --file-to-append="${temp_directory/sites/${unzipped_log}"
 	#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"  # <-- Maybe used later
 	
 	# Mask instances of the hostname occurring in the logs <-- Does not mask any instances outside of own logs
 	sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
-	#mask_all_matches --unmasked-string="$current_site" --masked-string="$hashed_site" --file-to-mask="${temp_directory}/sites/${unzipped_log}"
 	
 	# Rename logfile with hashed domain name
 	mv $temp_directory/sites/$unzipped_log $temp_directory/sites/$hashed_site
@@ -248,5 +245,5 @@ rm -rf $temp_directory
 rm *.gz
 
 # Exit gracefully
-echo "[INFO] Execution of ${script_name} complete at $(get_timestamp)"
+echo "[INFO] Execution of ${script_name} complete at $(date +"%Y-%m-%d_%H:%M:%S")"
 echo -e "\n"
