@@ -141,7 +141,7 @@ Datetime Information:
 	dom = $dom 
 	iso_date = $iso_date 
 	timezone = $timezone 
-	timestamp = $timestamp
+	start_timestamp = $start_timestamp
 EOF
 )
 echo "[INFO] ${debug_time_info}"
