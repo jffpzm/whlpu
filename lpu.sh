@@ -37,8 +37,11 @@ host_hash_stop=12
 site_hash_start=1
 site_hash_stop=24
 
-debug_initial_configuration=$(cat <<EOF
-Default Configuration:
+# Source config if it exists
+[ -f $config_file ] && source $config_file
+
+debug_configuration=$(cat <<EOF
+Debug Configuration Information:
 	relative_script_path = $relative_script_path
 	absolute_script_path = $absolute_script_path
 	base_directory = $base_directory
@@ -54,10 +57,7 @@ Default Configuration:
 	site_hash_stop = $site_hash_stop
 EOF
 )
-echo "[INFO] ${debug_initial_configuration}" 
-
-# Source config if it exists
-[ -f $config_file ] && source $config_file
+echo "[INFO] ${debug_configuration}" 
 : '
 ### Function definitions ###
 await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
