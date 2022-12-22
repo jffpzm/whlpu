@@ -177,7 +177,6 @@ site_names=()
 # Iterate through the gzipped log files in $base_directory
 echo "[INFO] Entering for-loop at $(get_timestamp)"
 for zipped_log in *.gz; do
-
     # Unzip the current file
     gunzip $zipped_log
 	echo "zipped_log = ${zipped_log}"
@@ -202,6 +201,7 @@ for zipped_log in *.gz; do
 	hashed_site=$(hash_site "$current_site")
 	echo "hashed_site = ${hashed_site}"
 ### Only used for debugging ###
+: '
 	debug_site_info=$(cat <<EOF
 	current_site = $current_site 
 	hashed_site = $hashed_site
@@ -209,7 +209,8 @@ for zipped_log in *.gz; do
 	unzipped_log = $unzipped_log 
 EOF
 )
-	echo "[INFO] ${debug_site_info}"
+'
+	#echo "[INFO] ${debug_site_info}"
 	echo "[INFO] Processing ${hashed_site} : $(echo ${unzipped_log} | sed "s/${current_site}/${hashed_site}/gi")"
 ###############################
 	
