@@ -187,8 +187,8 @@ for zipped_log in *.gz; do
 	esac
 
 	# Strip the TLD from the FQDN to get a bare domain name 
-	#current_site=$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
-	current_site=$(strip_all_extensions $unzipped_log)
+	current_site=$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
+	#current_site=$(strip_all_extensions $unzipped_log)
 	
 	# Append $current_site to the $site_names array
 	site_names+=($current_site)
