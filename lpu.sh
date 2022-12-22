@@ -209,13 +209,13 @@ EOF
 ###############################
 	
 	# Append site and hostname to the end of each line in the logfile 
-	#sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
-	append_all_lines --suffix-string="$hashed_site" --file-to-append="${temp_directory/sites/${unzipped_log}"
+	sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
+	#append_all_lines --suffix-string="$hashed_site" --file-to-append="${temp_directory/sites/${unzipped_log}"
 	#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"  # <-- Maybe used later
 	
 	# Mask instances of the hostname occurring in the logs <-- Does not mask any instances outside of own logs
-	#sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
-	mask_all_matches --unmasked-string="$current_site" --masked-string="$hashed_site" --file-to-mask="${temp_directory}/sites/${unzipped_log}"
+	sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
+	#mask_all_matches --unmasked-string="$current_site" --masked-string="$hashed_site" --file-to-mask="${temp_directory}/sites/${unzipped_log}"
 	
 	# Rename logfile with hashed domain name
 	mv $temp_directory/sites/$unzipped_log $temp_directory/sites/$hashed_site
