@@ -2,7 +2,7 @@
 # Web Host Log Parsing Utility
 # @filename lpu.sh
 # @created 2022.08.23
-# @version 2022.12.21+15:15
+# @version 2022.12.22+00:00
 
 # Configure global logging
 log_file="/var/log/lpu.log" # Path to log file
@@ -11,35 +11,37 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$log_file 2>&1
 # Everything below will be logged to "$log_file":
 
+
 ### Function Definitions Part 1 ###
 await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
-get_timestamp() { date +"%Y-%m-%d_%H:%M:%S"; }
+get_timestamp() { date +"%Y-%m-%d+%H:%M:%S"; }
 ###
 
 ### Configuration Information ###
-start_timestamp=get_timestamp #$(date +"%Y%m%d_%H%M%S") # Timestamp
+start_timestamp=$(date +"%Y%m%d_%H%M%S")
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
 script_name="${absolute_script_path##*/}"
-echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
+echo -e "\n[INFO] Execution of ${script_name} started at ${start_timestamp}"
 base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
 config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
-# Source config if it exists
-[ -f $config_file ] && source $config_file
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
 # Default selections for parse term parameters
 term_period="month" # Length of term to parse, e.g. hour, day, month, year, or all 
 term_target="last month" # String datetime describing a point within the desired term_period
 # Hashing preferences
-# Must be set before any hashing is done, clearly
 host_hash_start=1
 host_hash_stop=12
 site_hash_start=1
 site_hash_stop=24
 
+
+# Source config if it exists
+[ -f $config_file ] && source $config_file
+
 debug_configuration=$(cat <<EOF
-Configuration Information:
+Default Configuration:
 	relative_script_path = $relative_script_path
 	absolute_script_path = $absolute_script_path
 	base_directory = $base_directory
@@ -57,9 +59,8 @@ EOF
 )
 echo "[INFO] ${debug_configuration}" 
 
-
 ### Function Definitions Part 2 ###
-site_hash_function() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
+hash_site() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
 host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
 mask_all_matches() { 
 	local unmasked_string
@@ -123,7 +124,6 @@ mkdir -p $temp_directory/manager/users
 [ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
 [ $EUID -eq 0 ] && echo "[INFO] User running as root"
 [ $EUID -ne 0 ] && exit 0
-
 # Pull target date information
 year=$(date -d "$term_target" +%Y) # term_target's year
 month=$(date -d "$term_target" +%b) # term_target's month, as formatted by Apache
@@ -132,6 +132,7 @@ iso_date=$(date -d "$term_target" +%F) # term_target's full date; like %+4Y-%m-%
 short_date="${iso_date//-/}"
 timezone=$(date -d "$term_target" +%Z) # Alphabetic time zone abbreviation, e.g. EST
 # Generate a runtime timestamp
+timestamp=$(date +"%Y%m%d_%H%M%S") # Timestamp
 
 debug_time_info=$(cat <<EOF
 Datetime Information:
@@ -140,7 +141,7 @@ Datetime Information:
 	dom = $dom 
 	iso_date = $iso_date 
 	timezone = $timezone 
-	timestamp = $start_timestamp
+	timestamp = $timestamp
 EOF
 )
 echo "[INFO] ${debug_time_info}"
