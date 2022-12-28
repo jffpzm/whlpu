@@ -2,7 +2,7 @@
 # Web Host Log Parsing Utility
 # @filename lpu.sh
 # @created 2022.08.23
-# @version 2022.12.21+15:15
+# @version 2022.12.22+00:00
 
 # Configure global logging
 log_file="/var/log/lpu.log" # Path to log file
@@ -11,12 +11,25 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$log_file 2>&1
 # Everything below will be logged to "$log_file":
 
+
+### Function Definitions Part 1 ###
+
+## Wait for the user to press any key before continuing
+# Useful for debugging
+# Ex: await
+await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
+
+## Get the current timestamp formatted YYYY-MM-DD+hh:mm:ss # or however you want
+get_timestamp() { date +"%Y-%m-%d+%H:%M:%S"; }
+
+###
+
+### Configuration Information ###
+start_timestamp=$(date +"%Y%m%d_%H%M%S")
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
 script_name="${absolute_script_path##*/}"
-echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
-
-### Configuration Information ###
+echo -e "\n[INFO] Execution of ${script_name} started at ${start_timestamp}"
 base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
 config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
 temp_directory="${base_directory}/tmp" # Temporary working directory
@@ -25,13 +38,16 @@ package_directory="${base_directory}/deliverable" # Directory to save reports in
 term_period="month" # Length of term to parse, e.g. hour, day, month, year, or all 
 term_target="last month" # String datetime describing a point within the desired term_period
 # Hashing preferences
-# Must be set before any hashing is done, clearly
 host_hash_start=1
 host_hash_stop=12
 site_hash_start=1
 site_hash_stop=24
 
-debug_initial_configuration=$(cat <<EOF
+
+# Source config if it exists
+[ -f $config_file ] && source $config_file
+
+debug_configuration=$(cat <<EOF
 Default Configuration:
 	relative_script_path = $relative_script_path
 	absolute_script_path = $absolute_script_path
@@ -48,15 +64,62 @@ Default Configuration:
 	site_hash_stop = $site_hash_stop
 EOF
 )
-echo "[INFO] ${debug_initial_configuration}" 
+echo "[INFO] ${debug_configuration}" 
 
-# Source config if it exists
-[ -f $config_file ] && source $config_file
+### Function Definitions Part 2 ###
 
-### Function definitions ###
-await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
-site_hash_function() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
+## Hash and cut functions for site and vps hostnames
+# Takes in the strings from standard input with no flags
+# Returns the hashed and cut resulting string
+# Ex: hash_site "google.com"
+hash_site() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
 host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
+
+## Find and replace stand-in
+# Takes in three inputs; the unmasked string, the masked string, and the file to obfuscate
+# Ex: mask_all_matches --unmasked-string="foo" --masked-string="bar" --file-to-mask="tmp.txt"
+# Ex: mask_all_matches -u="foo" -m="bar -f="tmp.txt"
+mask_all_matches() { 
+	local unmasked_string
+	local masked_string 
+	local file_to_mask
+	for arg in "$@"; do
+        case "$arg" in
+            -u=*|--unmasked-string=*) unmasked_string="${arg#*=}" ;;
+			-m=*|--masked-string=*) masked_string="${arg#*=}" ;;
+			-f=*|--file-to-mask=*) file_to_mask="${arg#*=}" ;;
+            *) ;;
+        esac
+    done
+	[ ! -f $file_to_mask ] && echo "File does not exist"
+	[ -f $file_to_mask ] && sed -i "s/${unmasked_string}/${masked_string}/gi" "$file_to_mask"
+}
+
+### WARNING: Modifies file in place
+## Appends a given string to all lines in a file
+# Requires two inputs, a string to append and file to append to
+# Ex: append_all_lines --suffix-string="test" --file-to-append="tmp.txt"
+# Ex: append_all_lines -s="test" -f="tmp.txt"
+append_all_lines() {
+	local suffix_string
+	local file_to_append
+	for arg in "$@"; do
+        case "$arg" in
+            -s=*|--suffix-string=*) suffix_string="${arg#*=}" ;;
+			-f=*|--file-to-append=*) file_to_append="${arg#*=}" ;;
+            *) ;;
+        esac
+    done
+	[ ! -f $file_to_append ] && echo "File does not exist"
+	[ -f $file_to_append ] && sed -i "s/$/ ${suffix_string}/" "$file_to_append"
+}
+
+## Remove any and all ".*" extensions from a string
+# Accepts string input through stdin $1
+# Ex: strip_all_extensions "test.tar.gz"
+strip_all_extensions () { echo $1 | sed -e 's/\.[^.][^.]*$//'; }
+# Ex: strip_gz_extension "test.tar.gz" 
+strip_gz_extension () { echo $1 | sed -e 's/\.gz$//'; }
 ##
 
 ### Initialization ###
@@ -78,12 +141,13 @@ mkdir -p $temp_directory
 mkdir -p $temp_directory/{sites,host,manager,trash}
 mkdir -p $temp_directory/host/{apache2,exim,messages,maillog,secure}
 mkdir -p $temp_directory/manager/users
+mkdir -p $temp_directory/conf 
+mkdir -p $temp_directory/logs 
 
 # Check that we are running as root, otherwise make it so 
 [ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
 [ $EUID -eq 0 ] && echo "[INFO] User running as root"
 [ $EUID -ne 0 ] && exit 0
-
 # Pull target date information
 year=$(date -d "$term_target" +%Y) # term_target's year
 month=$(date -d "$term_target" +%b) # term_target's month, as formatted by Apache
@@ -121,6 +185,8 @@ echo "[INFO] ${debug_host_hash}"
 
 
 ##### Main Process #####
+[ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do cp $cf $temp_directory/conf/; done )
+[ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do cp $lf $temp_directory/logs/; done )
 ## Pull access logs from each site's home directory into $base_directory
 case "$term_period" in 
 	d|day|Day) cp /home/*/logs/*-${month}-${year}.gz ./ ;;
