@@ -13,8 +13,15 @@ exec 1>$log_file 2>&1
 
 
 ### Function Definitions Part 1 ###
+
+## Wait for the user to press any key before continuing
+# Useful for debugging
+# Ex: await
 await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
+
+## Get the current timestamp formatted YYYY-MM-DD+hh:mm:ss # or however you want
 get_timestamp() { date +"%Y-%m-%d+%H:%M:%S"; }
+
 ###
 
 ### Configuration Information ###
@@ -60,8 +67,18 @@ EOF
 echo "[INFO] ${debug_configuration}" 
 
 ### Function Definitions Part 2 ###
+
+## Hash and cut functions for site and vps hostnames
+# Takes in the strings from standard input with no flags
+# Returns the hashed and cut resulting string
+# Ex: hash_site "google.com"
 hash_site() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
 host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
+
+## Find and replace stand-in
+# Takes in three inputs; the unmasked string, the masked string, and the file to obfuscate
+# Ex: mask_all_matches --unmasked-string="foo" --masked-string="bar" --file-to-mask="tmp.txt"
+# Ex: mask_all_matches -u="foo" -m="bar -f="tmp.txt"
 mask_all_matches() { 
 	local unmasked_string
 	local masked_string 
@@ -74,15 +91,15 @@ mask_all_matches() {
             *) ;;
         esac
     done
-	#[ -n $unmasked_string ] && echo "Unmasked string: $unmasked_string"
-	#[ -n $masked_string ] && echo "Masked string: $masked_string"
-	#[ -n $file_to_mask ] && echo "File to mask: $file_to_mask"
-	#[ -z $unmasked_string ] && echo "Unmasked string: <UNSET>"
-	#[ -z $masked_string ] && echo "Masked string: <UNSET>"
-	#[ -z $file_to_mask ] && echo "File to mask: <UNSET>"
 	[ ! -f $file_to_mask ] && echo "File does not exist"
 	[ -f $file_to_mask ] && sed -i "s/${unmasked_string}/${masked_string}/gi" "$file_to_mask"
 }
+
+### WARNING: Modifies file in place
+## Appends a given string to all lines in a file
+# Requires two inputs, a string to append and file to append to
+# Ex: append_all_lines --suffix-string="test" --file-to-append="tmp.txt"
+# Ex: append_all_lines -s="test" -f="tmp.txt"
 append_all_lines() {
 	local suffix_string
 	local file_to_append
@@ -96,7 +113,12 @@ append_all_lines() {
 	[ ! -f $file_to_append ] && echo "File does not exist"
 	[ -f $file_to_append ] && sed -i "s/$/ ${suffix_string}/" "$file_to_append"
 }
+
+## Remove any and all ".*" extensions from a string
+# Accepts string input through stdin $1
+# Ex: strip_all_extensions "test.tar.gz"
 strip_all_extensions () { echo $1 | sed -e 's/\.[^.][^.]*$//'; }
+# Ex: strip_gz_extension "test.tar.gz" 
 strip_gz_extension () { echo $1 | sed -e 's/\.gz$//'; }
 ##
 
@@ -119,6 +141,8 @@ mkdir -p $temp_directory
 mkdir -p $temp_directory/{sites,host,manager,trash}
 mkdir -p $temp_directory/host/{apache2,exim,messages,maillog,secure}
 mkdir -p $temp_directory/manager/users
+mkdir -p $temp_directory/conf 
+mkdir -p $temp_directory/logs 
 
 # Check that we are running as root, otherwise make it so 
 [ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
@@ -161,6 +185,8 @@ echo "[INFO] ${debug_host_hash}"
 
 
 ##### Main Process #####
+[ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do cp $cf $temp_directory/conf/; done )
+[ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do cp $lf $temp_directory/logs/; done )
 ## Pull access logs from each site's home directory into $base_directory
 case "$term_period" in 
 	d|day|Day) cp /home/*/logs/*-${month}-${year}.gz ./ ;;
