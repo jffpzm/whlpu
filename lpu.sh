@@ -11,20 +11,15 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$log_file 2>&1
 # Everything below will be logged to "$log_file":
 
+# Check that we are running as root, otherwise make it so 
+[ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
+[ $EUID -eq 0 ] && echo "[INFO] User running as root"
+[ $EUID -ne 0 ] && exit 0
 
-### Function Definitions Part 1 ###
+local site_names 
 
-## Wait for the user to press any key before continuing
-# Useful for debugging
-# Ex: await
-await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
-
-## Get the current timestamp formatted YYYY-MM-DD+hh:mm:ss # or however you want
-get_timestamp() { date +"%Y-%m-%d+%H:%M:%S"; }
-
-###
-
-### Configuration Information ###
+### Default Configuration Information ###
+## This can be overwritten by the config file if it exists
 start_timestamp=$(date +"%Y%m%d_%H%M%S")
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
@@ -32,6 +27,7 @@ script_name="${absolute_script_path##*/}"
 echo -e "\n[INFO] Execution of ${script_name} started at ${start_timestamp}"
 base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
 config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
+functions_file="${base_directory}/functions.incl"
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
 # Default selections for parse term parameters
@@ -46,6 +42,7 @@ site_hash_stop=24
 
 # Source config if it exists
 [ -f $config_file ] && source $config_file
+[ -f $funcitons_file ] && source $functions_file
 
 debug_configuration=$(cat <<EOF
 Default Configuration:
@@ -65,62 +62,6 @@ Default Configuration:
 EOF
 )
 echo "[INFO] ${debug_configuration}" 
-
-### Function Definitions Part 2 ###
-
-## Hash and cut functions for site and vps hostnames
-# Takes in the strings from standard input with no flags
-# Returns the hashed and cut resulting string
-# Ex: hash_site "google.com"
-hash_site() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
-host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
-
-## Find and replace stand-in
-# Takes in three inputs; the unmasked string, the masked string, and the file to obfuscate
-# Ex: mask_all_matches --unmasked-string="foo" --masked-string="bar" --file-to-mask="tmp.txt"
-# Ex: mask_all_matches -u="foo" -m="bar -f="tmp.txt"
-mask_all_matches() { 
-	local unmasked_string
-	local masked_string 
-	local file_to_mask
-	for arg in "$@"; do
-        case "$arg" in
-            -u=*|--unmasked-string=*) unmasked_string="${arg#*=}" ;;
-			-m=*|--masked-string=*) masked_string="${arg#*=}" ;;
-			-f=*|--file-to-mask=*) file_to_mask="${arg#*=}" ;;
-            *) ;;
-        esac
-    done
-	[ ! -f $file_to_mask ] && echo "File does not exist"
-	[ -f $file_to_mask ] && sed -i "s/${unmasked_string}/${masked_string}/gi" "$file_to_mask"
-}
-
-### WARNING: Modifies file in place
-## Appends a given string to all lines in a file
-# Requires two inputs, a string to append and file to append to
-# Ex: append_all_lines --suffix-string="test" --file-to-append="tmp.txt"
-# Ex: append_all_lines -s="test" -f="tmp.txt"
-append_all_lines() {
-	local suffix_string
-	local file_to_append
-	for arg in "$@"; do
-        case "$arg" in
-            -s=*|--suffix-string=*) suffix_string="${arg#*=}" ;;
-			-f=*|--file-to-append=*) file_to_append="${arg#*=}" ;;
-            *) ;;
-        esac
-    done
-	[ ! -f $file_to_append ] && echo "File does not exist"
-	[ -f $file_to_append ] && sed -i "s/$/ ${suffix_string}/" "$file_to_append"
-}
-
-## Remove any and all ".*" extensions from a string
-# Accepts string input through stdin $1
-# Ex: strip_all_extensions "test.tar.gz"
-strip_all_extensions () { echo $1 | sed -e 's/\.[^.][^.]*$//'; }
-# Ex: strip_gz_extension "test.tar.gz" 
-strip_gz_extension () { echo $1 | sed -e 's/\.gz$//'; }
-##
 
 ### Initialization ###
 # Create the working directory if it doesn't exist; then change to it, regardless
@@ -144,10 +85,7 @@ mkdir -p $temp_directory/manager/users
 mkdir -p $temp_directory/conf 
 mkdir -p $temp_directory/logs 
 
-# Check that we are running as root, otherwise make it so 
-[ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
-[ $EUID -eq 0 ] && echo "[INFO] User running as root"
-[ $EUID -ne 0 ] && exit 0
+
 # Pull target date information
 year=$(date -d "$term_target" +%Y) # term_target's year
 month=$(date -d "$term_target" +%b) # term_target's month, as formatted by Apache
@@ -175,7 +113,7 @@ ls *.gz > /dev/null 2>&1 && rm *.gz
 
 # Generate a hash of the current hostname
 plain_host=$(hostname | xargs)
-hashed_host=$(host_hash_function "$plain_host")
+hashed_host=$(echo "$plain_host" | hash_string)
 debug_host_hash=$(cat <<EOF
 Host Information: 
 	hashed_host = $hashed_host
@@ -185,8 +123,9 @@ echo "[INFO] ${debug_host_hash}"
 
 
 ##### Main Process #####
-[ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do cp $cf $temp_directory/conf/; done )
-[ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do cp $lf $temp_directory/logs/; done )
+[ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do rsync -avR $cf $temp_directory/conf/; done )
+[ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do rsync -avR $lf $temp_directory/logs/; done )
+
 ## Pull access logs from each site's home directory into $base_directory
 case "$term_period" in 
 	d|day|Day) cp /home/*/logs/*-${month}-${year}.gz ./ ;;
@@ -196,14 +135,16 @@ case "$term_period" in
 esac
 site_names=()
 # Iterate through the gzipped log files in $base_directory
-echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
+#echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
+echo "[INFO] Entering for-loop at $(get_timestamp)"
 for zipped_log in *.gz; do
 
     # Unzip the current file
     gunzip "$zipped_log"
 
     # Strip the '.gz' extension from zipped_log and save it for reference
-    unzipped_log=$(echo $zipped_log | sed -e s/\.gz$//) 
+	#unzipped_log=$(echo $zipped_log | sed -e s/\.gz$//) 
+	unzipped_log=$(strip_gz_extension "${zipped_log}") 
 
     # Extract logs from the previous day into a separate file in $temp_directory
 	case "$term_period" in 
@@ -214,13 +155,14 @@ for zipped_log in *.gz; do
 	esac
 
 	# Strip the TLD from the FQDN to get a bare domain name 
-	current_site=$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
-	
+	#current_site=$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
+	current_site=$(strip_last_extension "${unzipped_log}")
+
 	# Append $current_site to the $site_names array
 	site_names+=($current_site)
 	
 	# Hash the current sitename
-	hashed_site=$(site_hash_function "$current_site")
+	hashed_site=$(echo "$current_site" | hash_string)
 	
 ### Only used for debugging ###
 debug_site_info=$(cat <<	EOF
@@ -235,11 +177,12 @@ EOF
 ###############################
 	
 	# Append site and hostname to the end of each line in the logfile 
-	sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
+	append_all_lines --suffix-string="${hashed_site}" --file-to-append="${unzipped_log}"
+	#sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
 	#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"  # <-- Maybe used later
 	
 	# Mask instances of the hostname occurring in the logs <-- Does not mask any instances outside of own logs
-	sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
+	#sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
 	
 	# Rename logfile with hashed domain name
 	mv $temp_directory/sites/$unzipped_log $temp_directory/sites/$hashed_site
@@ -249,13 +192,21 @@ EOF
 done
 echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 
-# Mask host name
-#echo "[INFO] Masking unhashed host name within files under the temp directory"
-#find $temp_directory -type f | xargs sed -i "s/${plain_host}/${hashed_host}/gi"  #"${temp_directory}/*" # <- Handles the possibility of this hostname being logged by other sites
-#find ./ -type f -exec sed -i -e 's/orange/apple/g' {} \;
+declare -a strings_to_mask 
+for user_file in $temp_directory/conf/var/cpanel/users/*; do 
+	for info in ${user_info[@]}; do
+		strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
+	done 
+done
 
-# Append hashed host to the end of each log entry in the tmp/host subdirectory
-#find $temp_directory/host -type f | xargs sed -i "s/$/ ${hashed_host}/"
+
+echo "${strings_to_mask[@]}"
+
+for unmasked_string in ${strings_to_mask[@]}; do
+	mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory --recursive
+done
+
+
 
 # Remove trash before archiving
 echo "[INFO] Emptying trash"
@@ -268,7 +219,7 @@ cp $log_file $temp_directory
 
 # Clean up working directory before we finish up
 echo "[INFO] Tidying up working directory"
-rm -rf $temp_directory
+#rm -rf $temp_directory
 rm *.gz
 
 # Exit gracefully
