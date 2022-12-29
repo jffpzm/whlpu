@@ -40,7 +40,7 @@ site_hash_stop=24
 
 # Source config if it exists
 [ -f $config_file ] && source $config_file
-[ -f $funcitons_file ] && source $functions_file
+[ -f $functions_file ] && source $functions_file
 
 debug_configuration=$(cat <<EOF
 Default Configuration:
