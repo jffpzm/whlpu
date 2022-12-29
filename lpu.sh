@@ -175,7 +175,7 @@ EOF
 ###############################
 	
 	# Append site and hostname to the end of each line in the logfile 
-	append_all_lines --suffix-string="${hashed_site}" --file-to-append="${unzipped_log}"
+	append_all_lines --suffix-string="${hashed_site}" --file-to-append=$unzipped_log
 	#sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
 	#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"  # <-- Maybe used later
 	
