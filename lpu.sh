@@ -24,8 +24,8 @@ absolute_script_path="$(readlink -f $0)"
 script_name="${absolute_script_path##*/}"
 echo -e "\n[INFO] Execution of ${script_name} started at ${start_timestamp}"
 base_directory="$(dirname "${absolute_script_path}")/base" #"/opt/lpu" # Base working directory 
-config_file="${absolute_script_pathy}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
-functions_file="${absolute_script_path}/functions.incl"
+config_file="./lpu.conf" #"/etc/lpu.conf" # Path to config file 
+functions_file="./functions.incl"
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
 # Default selections for parse term parameters
