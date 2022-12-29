@@ -193,7 +193,7 @@ done
 echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 
 declare -a strings_to_mask 
-for user_file in $temp_directory/conf/var/cpanel/users/*; do 
+for user_file in /var/cpanel/users/*; do 
 	for info in ${user_info[@]}; do
 		strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
 	done 
