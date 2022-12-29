@@ -190,16 +190,17 @@ EOF
 done
 echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 
-declare -a strings_to_mask 
 for user_file in /var/cpanel/users/*; do 
+	declare -a strings_to_mask 
 	for info in ${user_info[@]}; do
 		strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
 	done 
+	for unmasked_string in ${strings_to_mask[@]}; do
+		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/{logs,conf,sites,host,manager} --recursive
+	done
+	unset strings_to_mask
 done
 
-for unmasked_string in ${strings_to_mask[@]}; do
-	mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory --recursive
-done
 
 
 
