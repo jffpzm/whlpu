@@ -16,8 +16,6 @@ exec 1>$log_file 2>&1
 [ $EUID -eq 0 ] && echo "[INFO] User running as root"
 [ $EUID -ne 0 ] && exit 0
 
-local site_names 
-
 ### Default Configuration Information ###
 ## This can be overwritten by the config file if it exists
 start_timestamp=$(date +"%Y%m%d_%H%M%S")
