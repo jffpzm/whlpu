@@ -131,7 +131,7 @@ case "$term_period" in
 	y|year|Year) cp /home/*/logs/*-${year}.gz ./ ;;
 	*) ;;
 esac
-site_names=()
+#site_names=()
 # Iterate through the gzipped log files in $base_directory
 #echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 echo "[INFO] Entering for-loop at $(get_timestamp)"
@@ -157,7 +157,7 @@ for zipped_log in *.gz; do
 	current_site=$(strip_last_extension "${unzipped_log}")
 
 	# Append $current_site to the $site_names array
-	site_names+=($current_site)
+	#site_names+=($current_site)
 	
 	# Hash the current sitename
 	hashed_site=$(echo "$current_site" | hash_string)
@@ -196,9 +196,6 @@ for user_file in /var/cpanel/users/*; do
 		strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
 	done 
 done
-
-
-echo "${strings_to_mask[@]}"
 
 for unmasked_string in ${strings_to_mask[@]}; do
 	mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory --recursive
