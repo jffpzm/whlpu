@@ -191,4 +191,4 @@ mask_all() {
 	[ -n $unmasked_string ] && replace_all --initial-string=$unmasked_string --final-string=$masked_string target-path=$target_path --recursive
 }
 
-check_var_is_array() { declare -p "$1" 2> /dev/null | grep -q '^declare \-a' }
+#check_var_is_array() { declare -p "$1" 2> /dev/null | grep -q '^declare \-a' }
