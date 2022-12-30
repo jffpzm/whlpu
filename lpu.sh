@@ -2,8 +2,8 @@
 # Web Host Log Parsing Utility
 # @filename lpu.sh
 # @created 2022.08.23
-# @version 2022.12.22+00:00
-
+# @version 2022.12.21+15:15
+#ls *.gz > /dev/null 2>&1 &&
 # Configure global logging
 log_file="/var/log/lpu.log" # Path to log file
 exec 3>&1 4>&2
@@ -11,38 +11,28 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$log_file 2>&1
 # Everything below will be logged to "$log_file":
 
-# Check that we are running as root, otherwise make it so 
-[ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
-[ $EUID -eq 0 ] && echo "[INFO] User running as root"
-[ $EUID -ne 0 ] && exit 0
-
-### Default Configuration Information ###
-## This can be overwritten by the config file if it exists
-start_timestamp=$(date +"%Y%m%d_%H%M%S")
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
 script_name="${absolute_script_path##*/}"
-echo -e "\n[INFO] Execution of ${script_name} started at ${start_timestamp}"
-base_directory="$(dirname "${absolute_script_path}")/base" #"/opt/lpu" # Base working directory 
-config_file="./lpu.conf" #"/etc/lpu.conf" # Path to config file 
-functions_file="./functions.incl"
+echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
+
+### Configuration Information ###
+base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
+config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
+functions_file="${base_directory}/functions.sh"
 temp_directory="${base_directory}/tmp" # Temporary working directory
 package_directory="${base_directory}/deliverable" # Directory to save reports in
 # Default selections for parse term parameters
 term_period="month" # Length of term to parse, e.g. hour, day, month, year, or all 
 term_target="last month" # String datetime describing a point within the desired term_period
 # Hashing preferences
+# Must be set before any hashing is done, clearly
 host_hash_start=1
 host_hash_stop=12
 site_hash_start=1
 site_hash_stop=24
 
-
-# Source config if it exists
-[ -f $config_file ] && source $config_file
-[ -f $functions_file ] && source $functions_file
-
-debug_configuration=$(cat <<EOF
+debug_initial_configuration=$(cat <<EOF
 Default Configuration:
 	relative_script_path = $relative_script_path
 	absolute_script_path = $absolute_script_path
@@ -59,7 +49,17 @@ Default Configuration:
 	site_hash_stop = $site_hash_stop
 EOF
 )
-echo "[INFO] ${debug_configuration}" 
+echo "[INFO] ${debug_initial_configuration}" 
+
+# Source config if it exists
+[ -f $config_file ] && source $config_file
+[ -f $functions_file ] && source $functions_file
+
+### Function definitions ###
+await() { echo -e "\n\n$1"; read -rsn1 -p "Press any key to continue" && echo -e "\n\n"; }
+site_hash_function() { echo "$1" | sha256sum | cut -c "${site_hash_start}-${site_hash_stop}"; }
+host_hash_function() { echo "$1" | sha256sum | cut -c "${host_hash_start}-${host_hash_stop}"; }
+##
 
 ### Initialization ###
 # Create the working directory if it doesn't exist; then change to it, regardless
@@ -83,6 +83,10 @@ mkdir -p $temp_directory/manager/users
 mkdir -p $temp_directory/conf 
 mkdir -p $temp_directory/logs 
 
+# Check that we are running as root, otherwise make it so 
+[ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
+[ $EUID -eq 0 ] && echo "[INFO] User running as root"
+[ $EUID -ne 0 ] && exit 0
 
 # Pull target date information
 year=$(date -d "$term_target" +%Y) # term_target's year
@@ -111,7 +115,7 @@ ls *.gz > /dev/null 2>&1 && rm *.gz
 
 # Generate a hash of the current hostname
 plain_host=$(hostname | xargs)
-hashed_host=$(echo "$plain_host" | hash_string)
+hashed_host=$(host_hash_function "$plain_host")
 debug_host_hash=$(cat <<EOF
 Host Information: 
 	hashed_host = $hashed_host
@@ -121,6 +125,7 @@ echo "[INFO] ${debug_host_hash}"
 
 
 ##### Main Process #####
+
 [ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do rsync -avR $cf $temp_directory/conf/; done )
 [ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do rsync -avR $lf $temp_directory/logs/; done )
 
@@ -131,18 +136,15 @@ case "$term_period" in
 	y|year|Year) cp /home/*/logs/*-${year}.gz ./ ;;
 	*) ;;
 esac
-#site_names=()
 # Iterate through the gzipped log files in $base_directory
-#echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
-echo "[INFO] Entering for-loop at $(get_timestamp)"
+echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 for zipped_log in *.gz; do
 
     # Unzip the current file
     gunzip "$zipped_log"
 
     # Strip the '.gz' extension from zipped_log and save it for reference
-	#unzipped_log=$(echo $zipped_log | sed -e s/\.gz$//) 
-	unzipped_log=$(strip_gz_extension "${zipped_log}") 
+    unzipped_log=$(strip_gz_extension "$zipped_log") #$(echo $zipped_log | sed -e s/\.gz$//) 
 
     # Extract logs from the previous day into a separate file in $temp_directory
 	case "$term_period" in 
@@ -153,16 +155,12 @@ for zipped_log in *.gz; do
 	esac
 
 	# Strip the TLD from the FQDN to get a bare domain name 
-	#current_site=$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
-	current_site=$(strip_last_extension "${unzipped_log}")
-
-	# Append $current_site to the $site_names array
-	#site_names+=($current_site)
+	current_site=$(strip_last_extension "$unzipped_log") #$(echo $unzipped_log | sed -e 's/\.[^.][^.]*$//')
 	
 	# Hash the current sitename
+	#hashed_site=$(site_hash_function "$current_site")
 	hashed_site=$(echo "$current_site" | hash_string)
 	
-### Only used for debugging ###
 debug_site_info=$(cat <<	EOF
 	current_site = $current_site 
 	hashed_site = $hashed_site
@@ -172,15 +170,14 @@ EOF
 )
 	#echo "[INFO] ${debug_site_info}"
 	echo "[INFO] Processing ${hashed_site} : $(echo ${unzipped_log} | sed "s/${current_site}/${hashed_site}/gi")"
-###############################
 	
 	# Append site and hostname to the end of each line in the logfile 
-	append_all_lines --suffix-string="${hashed_site}" --file-to-append=$unzipped_log
 	#sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
-	#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"  # <-- Maybe used later
+	append_all_lines --suffix-string="${hashed_site}" --file-to-append="${temp_directory}/sites/${unzipped_log}"
 	
 	# Mask instances of the hostname occurring in the logs <-- Does not mask any instances outside of own logs
 	#sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
+#	mask_all --unmasked-string="${current_site}" --target-path="${temp_directory}/sites/${unzipped_log}"
 	
 	# Rename logfile with hashed domain name
 	mv $temp_directory/sites/$unzipped_log $temp_directory/sites/$hashed_site
@@ -189,6 +186,7 @@ EOF
 	gzip $unzipped_log 
 done
 echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
+
 
 for user_file in /var/cpanel/users/*; do 
 	declare -a strings_to_mask 
@@ -204,6 +202,7 @@ done
 
 
 
+
 # Remove trash before archiving
 echo "[INFO] Emptying trash"
 rm -rf "${temp_directory}/trash"
@@ -215,7 +214,7 @@ cp $log_file $temp_directory
 
 # Clean up working directory before we finish up
 echo "[INFO] Tidying up working directory"
-#rm -rf $temp_directory
+rm -rf $temp_directory
 rm *.gz
 
 # Exit gracefully
