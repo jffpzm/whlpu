@@ -17,7 +17,7 @@ script_name="${absolute_script_path##*/}"
 echo -e "\n[INFO] Execution of ${script_name} started at $(date +"%Y-%m-%d_%H:%M:%S")"
 
 ### Configuration Information ###
-base_directory="$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
+base_directory=/opt/lpu #"$(dirname "${absolute_script_path}")" #"/opt/lpu" # Base working directory 
 config_file="${base_directory}/lpu.conf" #"/etc/lpu.conf" # Path to config file 
 functions_file="${base_directory}/functions.sh"
 temp_directory="${base_directory}/tmp" # Temporary working directory
@@ -215,7 +215,7 @@ cp $log_file $temp_directory
 # Clean up working directory before we finish up
 echo "[INFO] Tidying up working directory"
 rm -rf $temp_directory
-rm *.gz
+#rm *.gz
 
 # Exit gracefully
 echo "[INFO] Execution of ${script_name} complete at $(date +"%Y-%m-%d_%H:%M:%S")"
