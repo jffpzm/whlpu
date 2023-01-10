@@ -202,17 +202,17 @@ for user_file in /var/cpanel/users/* ; do
 			#unset unmasked_string #strings_to_mask
 		done
 	fi
-	echo "[INFO] Masking strings"
-	for unmasked_string in ${strings_to_mask[@]}; do
-		masked_string=$(echo $unmasked_string | hash_string)
-		echo -e "    $masked_string \n"
-		#replace_all --initial-string="$unmasked_string" --final-string="$masked_string" --target-path=$temp_directory --recursive
-		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/sites/* #--recursive
-		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs/*
-		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf/*
-	done
-	unset strings_to_mask
 done
+echo "[INFO] Masking strings"
+for unmasked_string in ${strings_to_mask[@]}; do
+	masked_string=$(echo $unmasked_string | hash_string)
+	echo -e "    $masked_string \n"
+	#replace_all --initial-string="$unmasked_string" --final-string="$masked_string" --target-path=$temp_directory --recursive
+	mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/sites/* #--recursive
+	mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs/*
+	mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf/*
+done
+unset strings_to_mask
 
 # Append hashed host to the end of each log entry in the tmp/host subdirectory
 #find $temp_directory/host -type f | xargs sed -i "s/$/ ${hashed_host}/"
