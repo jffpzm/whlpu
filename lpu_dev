@@ -11,9 +11,10 @@
 
 # Configure global logging
 log_file="/var/log/lpu.log" # Path to log file
-exec 3>&1 4>&2
-trap 'exec 2>&4 1>&3' 0 1 2 3
-exec 1>$log_file 2>&1
+#exec 3>&1 4>&2
+#trap 'exec 2>&4 1>&3' 0 1 2 3
+#exec 1>$log_file 2>&1
+
 # Everything below will be logged to "$log_file":
 
 relative_script_path="$0"
@@ -175,19 +176,19 @@ echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 echo -e "[INFO] Copying configuration files \n"
 [ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do
 	echo -e "    $cf"
-	rsync -aR $cf $temp_directory/conf/
+	[ -f $cf ] && rsync $cf $temp_directory/conf/
 done )
 echo -e "[INFO] Copying other log files \n"
 [ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do
 	echo -e "    $lf"
-	rsync -aR $lf $temp_directory/logs/;
+	[ -f $lf ] && rsync $lf $temp_directory/logs/;
 done )
 
 
 # Mask host name
 echo "[INFO] Masking unhashed user info within files under the temp directory"
 
-for user_file in /var/cpanel/users/*; do
+for user_file in /var/cpanel/users/ ; do
 	echo "."
 	#declare -a strings_to_mask
 	unmasked_string=""
@@ -197,7 +198,8 @@ for user_file in /var/cpanel/users/*; do
 		unmasked_string=$(grep "$info" $user_file | cut -f2 -d '=' | xargs)
 	#done
 	#for unmasked_string in ${strings_to_mask[@]}; do
-		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory --recursive
+		#mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory --recursive
+		replace_all --initial-string=$unmasked_string --final-string=$(echo $unmasked_string | hash_string) --target-path=$temp_directory --recursive
 	done
 	unset unmasked_string #strings_to_mask
 done
