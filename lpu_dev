@@ -188,27 +188,30 @@ done )
 echo "[INFO] Masking unhashed user info within files under the temp directory"
 
 for user_file in /var/cpanel/users/* ; do
+	echo "[INFO] Collecting strings to mask"
+	declare -a strings_to_mask
 	if [ -f $user_file ] ; then
-		echo "... Collecting strings to mask"
-		declare -a strings_to_mask
+		echo "..."
 		#unmasked_string=""
 		#masked_string=""
 		for info in ${user_info[@]}; do
-			echo -e "    $info \n"
+			echo -e "    $info"
 			strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
 			#unmasked_string=$(grep "$info" $user_file | cut -f2 -d '=' | xargs)
 			#unset masked_string
 			#unset unmasked_string #strings_to_mask
 		done
-		echo "... Masking strings"
-		for unmasked_string in ${strings_to_mask[@]}; do
-			masked_string=$(echo $unmasked_string | hash_string)
-			echo -e "    $masked_string \n"
-			#replace_all --initial-string="$unmasked_string" --final-string="$masked_string" --target-path=$temp_directory --recursive
-			mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory --recursive
-		done
-		unset strings_to_mask
 	fi
+	echo "[INFO] Masking strings"
+	for unmasked_string in ${strings_to_mask[@]}; do
+		masked_string=$(echo $unmasked_string | hash_string)
+		echo -e "    $masked_string \n"
+		#replace_all --initial-string="$unmasked_string" --final-string="$masked_string" --target-path=$temp_directory --recursive
+		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/sites/* #--recursive
+		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs/*
+		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf/*
+	done
+	unset strings_to_mask
 done
 
 # Append hashed host to the end of each log entry in the tmp/host subdirectory
