@@ -124,7 +124,6 @@ case "$term_period" in
 	y|year|Year) cp /home/*/logs/*-${year}.gz ./ ;;
 	*) ;;
 esac
-site_names=()
 # Iterate through the gzipped log files in $base_directory
 echo "[INFO] Entering for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 for zipped_log in *.gz; do
@@ -188,20 +187,23 @@ done )
 # Mask host name
 echo "[INFO] Masking unhashed user info within files under the temp directory"
 
-for user_file in /var/cpanel/users/ ; do
-	echo "."
+for user_file in /var/cpanel/users ; do
+	echo "..."
 	#declare -a strings_to_mask
 	unmasked_string=""
+	masked_string=""
 	for info in ${user_info[@]}; do
-		echo "-"
+		echo -e "    $info \n"
 		#strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
 		unmasked_string=$(grep "$info" $user_file | cut -f2 -d '=' | xargs)
+		masked_string=$(echo $unmasked_string | hash_string)
+		replace_all --initial-string="$unmasked_string" --final-string="$masked_string" --target-path=$temp_directory --recursive
+		unset masked_string
+		unset unmasked_string #strings_to_mask
 	#done
 	#for unmasked_string in ${strings_to_mask[@]}; do
 		#mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory --recursive
-		replace_all --initial-string=$unmasked_string --final-string=$(echo $unmasked_string | hash_string) --target-path=$temp_directory --recursive
 	done
-	unset unmasked_string #strings_to_mask
 done
 
 # Append hashed host to the end of each log entry in the tmp/host subdirectory
