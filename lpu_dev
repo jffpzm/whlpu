@@ -172,15 +172,23 @@ EOF
 done
 echo "[INFO] Exiting for-loop at $(date +"%Y-%m-%d_%H:%M:%S")"
 
-[ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do rsync -avR $cf $temp_directory/conf/; done )
-[ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do rsync -avR $lf $temp_directory/logs/; done )
+echo -e "[INFO] Copying configuration files \n"
+[ -n $existing_conf_files ] && ( for cf in ${existing_conf_files[@]}; do
+	echo -e "    $cf"
+	rsync -aR $cf $temp_directory/conf/
+done )
+echo -e "[INFO] Copying other log files \n"
+[ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do
+	echo -e "    $lf"
+	rsync -aR $lf $temp_directory/logs/;
+done )
 
 
 # Mask host name
 echo "[INFO] Masking unhashed user info within files under the temp directory"
 
 for user_file in /var/cpanel/users/*; do
-	echo '.'
+	echo "."
 	declare -a strings_to_mask
 	for info in ${user_info[@]}; do
 		strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
