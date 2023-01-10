@@ -147,20 +147,22 @@ replace_all() {
             *) ;;
         esac
     done
-	if [ ! -f $target_path ]; then 
-		if [ ! -d $target_path ]; then
-			echo "File or path does not exist"
+	if grep -q $initial_string $target_path ; then 
+		if [ ! -f $target_path ]; then 
+			if [ ! -d $target_path ]; then
+				echo "File or path does not exist"
+			fi
 		fi
-	fi
-	if [ -d $target_path ]; then 
-		#echo "Target path is a directory"
-		if [ $recursive_flag ]; then 
-			find $target_path -type f | xargs sed -i "s/${initial_string}/${final_string}/gi"
-		fi
-	else
-		if [ -f $target_path ]; then
-			#echo "Target path is a file"
-			sed -i "s/${initial_string}/${final_string}/gi" $target_path
+		if [ -d $target_path ]; then 
+			#echo "Target path is a directory"
+			if [ $recursive_flag ]; then 
+				find $target_path -type f | xargs sed -i "s/${initial_string}/${final_string}/gi"
+			fi
+		else
+			if [ -f $target_path ]; then
+				#echo "Target path is a file"
+				sed -i "s/${initial_string}/${final_string}/gi" $target_path
+			fi
 		fi
 	fi
 }
@@ -192,3 +194,32 @@ mask_all() {
 }
 
 #check_var_is_array() { echo "$(declare -p "$1" 2> /dev/null | grep -q '^declare \-a')" }
+
+
+
+# Mask cPanel User Info
+mask_cpuser_info() {
+	user_info=( "USER=" "IP=" "DNS" "CONTACTEMAIL" )
+	for user_file in /var/cpanel/users/*; do 
+		declare -a strings_to_mask 
+		for info in ${user_info[@]}; do
+			strings_to_mask+=($(grep "$info" $user_file | cut -f2 -d '=' | xargs))
+		done 
+		for unmasked_string in ${strings_to_mask[@]}; do
+			mask_all --unmasked-string="$unmasked_string" --target-path=$1 --recursive
+		done
+		unset strings_to_mask
+	done
+}
+
+randpw(){ < /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-16};echo;}
+
+change_cpuser_passwd() {
+	for user_file in /var/cpanel/users/*; do 
+		username=$(grep "USER=" $user_file | cut -f2 -d '=' | xargs)
+		passwd -S $username
+		password = randpw
+		echo "${username} | ${password}"
+		echo $password | passwd --stdin $username
+	done
+}
