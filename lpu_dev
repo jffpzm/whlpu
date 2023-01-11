@@ -163,7 +163,7 @@ EOF
 		#sed -i "s/$/ ${hashed_site}/" "${temp_directory}/sites/${unzipped_log}"
 		#sed -i "s/$/ ${hashed_site} ${hashed_host}/" "${temp_directory}/sites/${unzipped_log}"  # <-- Maybe used later
 		# Mask instances of the hostname occurring in the logs <-- Does not mask any instances outside of own logs
-		#sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
+		sed -i "s/${current_site}/${hashed_site}/gi" "${temp_directory}/sites/${unzipped_log}"
 		# Rename logfile with hashed domain name
 		mv $temp_directory/sites/$unzipped_log $temp_directory/sites/$hashed_site
 	    # Re-zip the current file (so it can be identified for deletion), then on to the next
@@ -208,8 +208,8 @@ for unmasked_string in ${strings_to_mask[@]}; do
 		masked_string=$(echo $unmasked_string | hash_string)
 		echo -e "    $masked_string"
 		#replace_all --initial-string="$unmasked_string" --final-string="$masked_string" --target-path=$temp_directory --recursive
-		echo "        sites"
-		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/sites/* #--recursive
+		#echo "        sites"
+		#mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/sites/* #--recursive
 		echo "        logs"
 		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs/*
 		echo "        conf"
