@@ -187,9 +187,9 @@ done )
 # Mask host name
 echo "[INFO] Masking unhashed user info within files under the temp directory"
 
+declare -a strings_to_mask
 for user_file in /var/cpanel/users/* ; do
 	echo "[INFO] Collecting strings to mask"
-	declare -a strings_to_mask
 	if [ -f $user_file ] ; then
 		#unmasked_string=""
 		#masked_string=""
@@ -202,6 +202,7 @@ for user_file in /var/cpanel/users/* ; do
 		done
 	fi
 done
+
 echo "[INFO] Masking strings"
 for unmasked_string in ${strings_to_mask[@]}; do
 	if [ ! -z $unmasked_string ] ; then
@@ -212,11 +213,11 @@ for unmasked_string in ${strings_to_mask[@]}; do
 		#mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/sites/* #--recursive
 		if grep -qR $unmasked_string $temp_directory/logs ; then
 			echo "        logs"
-			mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs --recursive
+			mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs/* --recursive
 		fi
 		if grep -qR $unmasked_string $temp_directory/conf ; then
 			echo "        conf"
-			mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf --recursive
+			mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf/* --recursive
 		fi
 	fi
 done
