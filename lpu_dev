@@ -238,8 +238,8 @@ rm -rf "${temp_directory}/trash"
 echo "[INFO] Creating archive and compressing"
 cp $log_file $temp_directory
 ( cd $temp_directory && tar -czf "${package_directory}/${hashed_host}_${timestamp}_${term_period}_of_${short_date}.tar.gz" * )
-
-transfer_package --source-path="${package_directory}/${hashed_host}_${timestamp}_${term_period}_of_${short_date}.tar.gz" --destination-host="loghost" --destination-path="~/deliverable/"
+of="${hashed_host}_${timestamp}_${term_period}_of_${short_date}.tar.gz"
+transfer_package --source-path="${package_directory}/${of}" --destination-host="loghost" --destination-path="/home/logs/$of"
 
 
 # Clean up working directory before we finish up
