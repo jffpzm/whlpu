@@ -147,21 +147,23 @@ replace_all() {
             *) ;;
         esac
     done
-	#if grep -q $initial_string $target_path ; then 
-		if [ ! -f $target_path ]; then 
-			if [ ! -d $target_path ]; then
+	paths_to_check=$(find $target_path -type f | xargs)
+	for xpath in ${paths_to_check[@]}; do 
+	#if grep -q $initial_string $xpath ; then 
+		if [ ! -f $xpath ]; then 
+			if [ ! -d $xpath ]; then
 				echo "File or path does not exist"
 			fi
 		fi
-		if [ -d $target_path ]; then 
+		if [ -d $xpath ]; then 
 			#echo "Target path is a directory"
 			if [ $recursive_flag ]; then 
-				find $target_path -type f | xargs sed -i "s/${initial_string}/${final_string}/gi"
+				find $xpath -type f | xargs sed -i "s/${initial_string}/${final_string}/gi"
 			fi
 		else
-			if [ -f $target_path ]; then
+			if [ -f $xpath ]; then
 				#echo "Target path is a file"
-				sed -i "s/${initial_string}/${final_string}/gi" $target_path
+				sed -i "s/${initial_string}/${final_string}/gi" $xpath
 			fi
 		fi
 	#fi
