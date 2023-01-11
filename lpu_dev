@@ -3,11 +3,8 @@
 # @filename lpu.sh
 # @created 2022.08.23
 # @version 2022.12.21+15:15
-SECONDS=0
-# Check that we are running as root, otherwise make it so
-[ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
-[ $EUID -eq 0 ] && echo "[INFO] User running as root"
-[ $EUID -ne 0 ] && exit 0
+
+# 0 1 * * * /opt/lpu/lpu.sh
 
 # Configure global logging
 log_file="/var/log/lpu.log" # Path to log file
@@ -16,6 +13,14 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$log_file 2>&1
 
 # Everything below will be logged to "$log_file":
+
+# Start the clock (SECONDS is an in-built bash variable)
+SECONDS=0
+
+# Check that we are running as root, otherwise make it so
+[ $EUID -ne 0 ] && echo "[WARN] User not running as root" && sudo -s $0
+[ $EUID -eq 0 ] && echo "[INFO] User running as root"
+[ $EUID -ne 0 ] && exit 0
 
 relative_script_path="$0"
 absolute_script_path="$(readlink -f $0)"
