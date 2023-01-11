@@ -204,8 +204,10 @@ for user_file in /var/cpanel/users/* ; do
 	fi
 done
 
+unique_strings_to_mask=$(printf "%s\n" "${strings_to_mask[@]}" | sort -u)
+
 echo "[INFO] Masking strings"
-for unmasked_string in ${strings_to_mask[@]}; do
+for unmasked_string in ${unique_strings_to_mask[@]}; do
 	echo "."
 	if [ ! -z $unmasked_string ] ; then
 		#masked_string=$(echo $unmasked_string | hash_string)
