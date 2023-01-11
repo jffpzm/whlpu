@@ -37,6 +37,7 @@ host_hash_start=1
 host_hash_stop=12
 site_hash_start=1
 site_hash_stop=24
+tail_length=1000
 
 # Source config if it exists
 [ -f $config_file ] && source $config_file
@@ -180,7 +181,7 @@ done )
 echo -e "[INFO] Copying other log files \n"
 [ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do
 	echo -e "    $lf"
-	[ -f $lf ] && rsync $lf $temp_directory/logs/
+	[ -f $lf ] && tail -n $tail_length $lf > $temp_directory/logs/$lf #rsync $lf $temp_directory/logs/
 done )
 
 
