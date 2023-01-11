@@ -216,7 +216,7 @@ for unmasked_string in ${strings_to_mask[@]}; do
 		#	echo "...     logs"
 		#	mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs/*
 		#fi
-		if grep -qR $unmasked_string $temp_directory/conf ; then
+		if grep -qR "$unmasked_string" $temp_directory/conf ; then
 			echo "...     conf"
 			mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf/*
 		fi
