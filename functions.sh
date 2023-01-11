@@ -147,7 +147,7 @@ replace_all() {
             *) ;;
         esac
     done
-	if grep -q $initial_string $target_path ; then 
+	#if grep -q $initial_string $target_path ; then 
 		if [ ! -f $target_path ]; then 
 			if [ ! -d $target_path ]; then
 				echo "File or path does not exist"
@@ -164,7 +164,7 @@ replace_all() {
 				sed -i "s/${initial_string}/${final_string}/gi" $target_path
 			fi
 		fi
-	fi
+	#fi
 }
 
 mask_all() { 
