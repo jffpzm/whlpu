@@ -106,8 +106,8 @@ echo "[INFO] ${debug_time_info}"
 ls *.gz > /dev/null 2>&1 && rm *.gz
 
 # Generate a hash of the current hostname
-#plain_host=$(hostname | xargs)
-#hashed_host=$(host_hash_function "$plain_host")
+plain_host=$(hostname | xargs)
+hashed_host=$(echo "$plain_host" | hash_string)
 #debug_host_hash=$(cat <<EOF
 #Host Information:
 #	hashed_host = $hashed_host
