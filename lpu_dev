@@ -205,15 +205,15 @@ done
 echo "[INFO] Masking strings"
 for unmasked_string in ${strings_to_mask[@]}; do
 	if [ ! -z $unmasked_string ] ; then
-		masked_string=$(echo $unmasked_string | hash_string)
+		#masked_string=$(echo $unmasked_string | hash_string)
 		echo -e "    $masked_string"
 		#replace_all --initial-string="$unmasked_string" --final-string="$masked_string" --target-path=$temp_directory --recursive
 		#echo "        sites"
 		#mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/sites/* #--recursive
 		echo "        logs"
-		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs/*
+		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/logs --recursive
 		echo "        conf"
-		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf/*
+		mask_all --unmasked-string="$unmasked_string" --target-path=$temp_directory/conf --recursive
 	fi
 done
 unset strings_to_mask
