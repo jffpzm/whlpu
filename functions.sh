@@ -167,6 +167,7 @@ replace_all() {
 			fi
 		fi
 	#fi
+	done
 }
 
 mask_all() { 
