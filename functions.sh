@@ -216,13 +216,3 @@ mask_cpuser_info() {
 }
 
 randpw(){ < /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-16};echo;}
-
-change_cpuser_passwd() {
-	for user_file in /var/cpanel/users/*; do 
-		username=$(grep "USER=" $user_file | cut -f2 -d '=' | xargs)
-		passwd -S $username
-		password = randpw
-		echo "${username} | ${password}"
-		echo $password | passwd --stdin $username
-	done
-}
