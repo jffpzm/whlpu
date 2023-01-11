@@ -190,7 +190,7 @@ mask_all() {
 	done
 	#masked_string=$(hash_string --string-to-hash="$unmasked_string" --hash-function="$hash_function" --start-cut=$start_cut --stop-cut=$stop_cut)
 	masked_string=$(echo "$unmasked_string" | hash_string)
-	[ -n $unmasked_string ] && replace_all --initial-string=$unmasked_string --final-string=$masked_string target-path=$target_path --recursive
+	[ ! -z $unmasked_string ] && replace_all --initial-string=$unmasked_string --final-string=$masked_string target-path=$target_path --recursive
 }
 
 #check_var_is_array() { echo "$(declare -p "$1" 2> /dev/null | grep -q '^declare \-a')" }
