@@ -181,7 +181,7 @@ done )
 echo -e "[INFO] Copying other log files \n"
 [ -n $existing_log_files ] && ( for lf in ${existing_log_files[@]}; do
 	echo -e "    $lf"
-	[ -f $lf ] && tail -n $tail_length $lf > $temp_directory/logs/$lf #rsync $lf $temp_directory/logs/
+	[ -f $lf ] && tail -n $tail_length $lf > $temp_directory/logs/"${lf##*/}" #rsync $lf $temp_directory/logs/
 done )
 
 
