@@ -239,6 +239,9 @@ echo "[INFO] Creating archive and compressing"
 cp $log_file $temp_directory
 ( cd $temp_directory && tar -czf "${package_directory}/${hashed_host}_${timestamp}_${term_period}_of_${short_date}.tar.gz" * )
 
+transfer_package --source-path="${package_directory}/${hashed_host}_${timestamp}_${term_period}_of_${short_date}.tar.gz" --destination-host="loghost" --destination-path="~/deliverable/"
+
+
 # Clean up working directory before we finish up
 echo "[INFO] Tidying up working directory"
 rm -rf $temp_directory
